@@ -4,6 +4,7 @@ import { Overview } from './components/Overview';
 import { InteractiveMap } from './components/InteractiveMap';
 import { StatisticsCharts } from './components/StatisticsCharts';
 import { ResourceDatabase } from './components/ResourceDatabase';
+import { AgriculturalResources } from './components/AgriculturalResources';
 
 function App() {
   const [activeSection, setActiveSection] = useState('overview');
@@ -19,7 +20,7 @@ function App() {
       case 'resources':
         return <ResourceDatabase />;
       case 'agriculture':
-        return <ResourceDatabase />;
+        return <AgriculturalResources />;
       default:
         return <Overview />;
     }
