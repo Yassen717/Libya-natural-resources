@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { TrendingUp, PieChart, BarChart3, Activity } from 'lucide-react';
+import { TrendingUp, PieChart as PieIcon, BarChart3 } from 'lucide-react';
+import {
+  PieChart, Pie, Cell, Tooltip as ReTooltip, Legend as ReLegend,
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  BarChart, Bar, ResponsiveContainer
+} from 'recharts';
 
 interface ChartData {
   name: string;
@@ -16,196 +21,122 @@ const productionData: ChartData[] = [
 ];
 
 const yearlyProduction = [
-  { year: '2019', oil: 1200, gas: 850, minerals: 400 },
-  { year: '2020', oil: 950, gas: 780, minerals: 380 },
-  { year: '2021', oil: 1100, gas: 820, minerals: 420 },
-  { year: '2022', oil: 1350, gas: 950, minerals: 450 },
-  { year: '2023', oil: 1400, gas: 980, minerals: 480 },
+  { year: '2019', النفط: 1200, الغاز: 850, المعادن: 400 },
+  { year: '2020', النفط: 950, الغاز: 780, المعادن: 380 },
+  { year: '2021', النفط: 1100, الغاز: 820, المعادن: 420 },
+  { year: '2022', النفط: 1350, الغاز: 950, المعادن: 450 },
+  { year: '2023', النفط: 1400, الغاز: 980, المعادن: 480 },
 ];
+
+const regions = [
+  { name: 'الشرق', النفط: 60, الغاز: 40, المعادن: 30 },
+  { name: 'الغرب', النفط: 35, الغاز: 55, المعادن: 45 },
+  { name: 'الجنوب', النفط: 20, الغاز: 25, المعادن: 60 },
+  { name: 'الوسط', النفط: 45, الغاز: 30, المعادن: 35 },
+];
+
+const COLORS = productionData.map(d => d.color);
 
 export const StatisticsCharts: React.FC = () => {
   const [activeChart, setActiveChart] = useState<'pie' | 'line' | 'bar'>('pie');
 
-  const PieChart: React.FC = () => {
-    let cumulativePercentage = 0;
-    
-    return (
-      <div className="flex flex-col items-center">
-        <div className="relative w-64 h-64 mb-6">
-          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-            {productionData.map((item, index) => {
-              const percentage = item.value;
-              const strokeDasharray = `${percentage} ${100 - percentage}`;
-              const strokeDashoffset = -cumulativePercentage;
-              cumulativePercentage += percentage;
-              
-              return (
-                <circle
-                  key={index}
-                  cx="50"
-                  cy="50"
-                  r="15.91549430918954"
-                  fill="transparent"
-                  stroke={item.color}
-                  strokeWidth="8"
-                  strokeDasharray={strokeDasharray}
-                  strokeDashoffset={strokeDashoffset}
-                  className="transition-all duration-500 hover:stroke-width-10"
-                />
-              );
-            })}
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-800">100%</div>
-              <div className="text-sm text-gray-600">إجمالي الإنتاج</div>
-            </div>
-          </div>
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white rounded-lg shadow-lg p-2 text-sm text-gray-800">
+          <span className="font-bold">{label}</span>
+          <ul className="mt-1">
+            {payload.map((entry: any, idx: number) => (
+              <li key={idx} className="flex items-center gap-2">
+                <span style={{ background: entry.color }} className="inline-block w-3 h-3 rounded-full"></span>
+                {entry.name}: <span className="font-semibold">{entry.value}</span>
+              </li>
+            ))}
+          </ul>
         </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
-          {productionData.map((item, index) => (
-            <div key={index} className="flex items-center space-x-2 rtl:space-x-reverse">
-              <div
-                className="w-4 h-4 rounded-full"
-                style={{ backgroundColor: item.color }}
-              ></div>
-              <span className="text-sm text-gray-700">{item.name}</span>
-              <span className="text-sm font-semibold text-gray-800">{item.value}%</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
+      );
+    }
+    return null;
   };
 
-  const LineChart: React.FC = () => {
-    const maxValue = Math.max(...yearlyProduction.flatMap(d => [d.oil, d.gas, d.minerals]));
-    
-    const getYPosition = (value: number) => 80 - (value / maxValue) * 60;
-    
-    return (
-      <div className="w-full">
-        <svg className="w-full h-64" viewBox="0 0 400 100">
-          {/* Grid lines */}
-          {[0, 25, 50, 75, 100].map(y => (
-            <line key={y} x1="40" y1={y} x2="380" y2={y} stroke="#E5E7EB" strokeWidth="0.5" />
-          ))}
-          
-          {/* Oil line */}
-          <polyline
-            fill="none"
-            stroke="#F39C12"
-            strokeWidth="3"
-            points={yearlyProduction.map((d, i) => `${50 + i * 80},${getYPosition(d.oil)}`).join(' ')}
-            className="drop-shadow-sm"
-          />
-          
-          {/* Gas line */}
-          <polyline
-            fill="none"
-            stroke="#3498DB"
-            strokeWidth="3"
-            points={yearlyProduction.map((d, i) => `${50 + i * 80},${getYPosition(d.gas)}`).join(' ')}
-            className="drop-shadow-sm"
-          />
-          
-          {/* Minerals line */}
-          <polyline
-            fill="none"
-            stroke="#95A5A6"
-            strokeWidth="3"
-            points={yearlyProduction.map((d, i) => `${50 + i * 80},${getYPosition(d.minerals)}`).join(' ')}
-            className="drop-shadow-sm"
-          />
-          
-          {/* Data points */}
-          {yearlyProduction.map((d, i) => (
-            <g key={i}>
-              <circle cx={50 + i * 80} cy={getYPosition(d.oil)} r="4" fill="#F39C12" />
-              <circle cx={50 + i * 80} cy={getYPosition(d.gas)} r="4" fill="#3498DB" />
-              <circle cx={50 + i * 80} cy={getYPosition(d.minerals)} r="4" fill="#95A5A6" />
-              <text x={50 + i * 80} y="95" textAnchor="middle" className="fill-gray-600 text-xs">
-                {d.year}
+  const PieChartComp: React.FC = () => (
+    <div className="flex flex-col items-center w-full">
+      <ResponsiveContainer width="100%" height={300}>
+        <PieChart>
+          <Pie
+            data={productionData}
+            dataKey="value"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            outerRadius={100}
+            innerRadius={60}
+            isAnimationActive
+            label={({ name, percent, x, y, index }) => (
+              <text
+                x={x}
+                y={y}
+                fill="#222"
+                fontSize={16}
+                fontWeight="bold"
+                textAnchor={x > 200 ? 'start' : 'end'}
+                alignmentBaseline="middle"
+                style={{ pointerEvents: 'none' }}
+              >
+                {name} ({(percent * 100).toFixed(0)}%)
               </text>
-            </g>
-          ))}
-        </svg>
-        
-        <div className="flex justify-center space-x-6 rtl:space-x-reverse mt-4">
-          <div className="flex items-center space-x-2 rtl:space-x-reverse">
-            <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-            <span className="text-sm text-gray-700">النفط (ألف برميل/يوم)</span>
-          </div>
-          <div className="flex items-center space-x-2 rtl:space-x-reverse">
-            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-            <span className="text-sm text-gray-700">الغاز (مليون قدم³/يوم)</span>
-          </div>
-          <div className="flex items-center space-x-2 rtl:space-x-reverse">
-            <div className="w-3 h-3 rounded-full bg-gray-500"></div>
-            <span className="text-sm text-gray-700">المعادن (ألف طن/سنة)</span>
-          </div>
-        </div>
-      </div>
-    );
-  };
+            )}
+            labelLine
+          >
+            {productionData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.color} />
+            ))}
+          </Pie>
+          <ReTooltip content={<CustomTooltip />} />
+          <ReLegend verticalAlign="bottom" iconType="circle" />
+        </PieChart>
+      </ResponsiveContainer>
+    </div>
+  );
 
-  const BarChart: React.FC = () => {
-    const regions = [
-      { name: 'الشرق', oil: 60, gas: 40, minerals: 30 },
-      { name: 'الغرب', oil: 35, gas: 55, minerals: 45 },
-      { name: 'الجنوب', oil: 20, gas: 25, minerals: 60 },
-      { name: 'الوسط', oil: 45, gas: 30, minerals: 35 },
-    ];
+  const LineChartComp: React.FC = () => (
+    <div className="w-full">
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={yearlyProduction} margin={{ top: 20, right: 30, left: 0, bottom: 10 }}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="year" />
+          <YAxis />
+          <ReTooltip content={<CustomTooltip />} />
+          <ReLegend verticalAlign="top" iconType="circle" />
+          <Line type="monotone" dataKey="النفط" stroke="#F39C12" strokeWidth={3} dot={{ r: 5 }} activeDot={{ r: 8 }} />
+          <Line type="monotone" dataKey="الغاز" stroke="#3498DB" strokeWidth={3} dot={{ r: 5 }} activeDot={{ r: 8 }} />
+          <Line type="monotone" dataKey="المعادن" stroke="#95A5A6" strokeWidth={3} dot={{ r: 5 }} activeDot={{ r: 8 }} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
 
-    const maxValue = Math.max(...regions.flatMap(r => [r.oil, r.gas, r.minerals]));
-
-    return (
-      <div className="w-full">
-        <svg className="w-full h-64" viewBox="0 0 400 100">
-          {regions.map((region, i) => {
-            const x = 50 + i * 80;
-            const oilHeight = (region.oil / maxValue) * 60;
-            const gasHeight = (region.gas / maxValue) * 60;
-            const mineralsHeight = (region.minerals / maxValue) * 60;
-            
-            return (
-              <g key={i}>
-                <rect x={x - 15} y={80 - oilHeight} width="8" height={oilHeight} fill="#F39C12" rx="2" />
-                <rect x={x - 4} y={80 - gasHeight} width="8" height={gasHeight} fill="#3498DB" rx="2" />
-                <rect x={x + 7} y={80 - mineralsHeight} width="8" height={mineralsHeight} fill="#95A5A6" rx="2" />
-                <text x={x} y="95" textAnchor="middle" className="fill-gray-600 text-xs">
-                  {region.name}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
-        
-        <div className="flex justify-center space-x-6 rtl:space-x-reverse mt-4">
-          <div className="flex items-center space-x-2 rtl:space-x-reverse">
-            <div className="w-3 h-3 rounded-sm bg-orange-500"></div>
-            <span className="text-sm text-gray-700">النفط</span>
-          </div>
-          <div className="flex items-center space-x-2 rtl:space-x-reverse">
-            <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
-            <span className="text-sm text-gray-700">الغاز</span>
-          </div>
-          <div className="flex items-center space-x-2 rtl:space-x-reverse">
-            <div className="w-3 h-3 rounded-sm bg-gray-500"></div>
-            <span className="text-sm text-gray-700">المعادن</span>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  const BarChartComp: React.FC = () => (
+    <div className="w-full">
+      <ResponsiveContainer width="100%" height={300}>
+        <BarChart data={regions} margin={{ top: 20, right: 30, left: 0, bottom: 10 }}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="name" />
+          <YAxis />
+          <ReTooltip content={<CustomTooltip />} />
+          <ReLegend verticalAlign="top" iconType="circle" />
+          <Bar dataKey="النفط" fill="#F39C12" radius={[8, 8, 0, 0]} />
+          <Bar dataKey="الغاز" fill="#3498DB" radius={[8, 8, 0, 0]} />
+          <Bar dataKey="المعادن" fill="#95A5A6" radius={[8, 8, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
 
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800 mb-4">الإحصائيات والمخططات البيانية</h2>
-        
-        {/* Chart Type Selector */}
         <div className="flex space-x-2 rtl:space-x-reverse mb-6">
           <button
             onClick={() => setActiveChart('pie')}
@@ -215,7 +146,7 @@ export const StatisticsCharts: React.FC = () => {
                 : 'bg-gray-100 text-gray-600 hover:bg-green-50'
             }`}
           >
-            <PieChart className="w-4 h-4" />
+            <PieIcon className="w-4 h-4" />
             <span>مخطط دائري</span>
           </button>
           <button
@@ -242,14 +173,11 @@ export const StatisticsCharts: React.FC = () => {
           </button>
         </div>
       </div>
-
       <div className="bg-gradient-to-br from-gray-50 to-green-50 rounded-xl p-6 min-h-96 flex items-center justify-center">
-        {activeChart === 'pie' && <PieChart />}
-        {activeChart === 'line' && <LineChart />}
-        {activeChart === 'bar' && <BarChart />}
+        {activeChart === 'pie' && <PieChartComp />}
+        {activeChart === 'line' && <LineChartComp />}
+        {activeChart === 'bar' && <BarChartComp />}
       </div>
-
-      {/* Key Statistics */}
       <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg p-4 text-center">
           <div className="text-2xl font-bold text-orange-800">1.4M</div>
