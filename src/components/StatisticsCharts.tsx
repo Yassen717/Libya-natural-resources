@@ -1,201 +1,271 @@
-import React, { useState } from 'react';
-import { TrendingUp, PieChart as PieIcon, BarChart3 } from 'lucide-react';
+import { useState } from 'react';
+import type { LucideIcon } from 'lucide-react';
+import { BarChart3, PieChart as PieChartIcon, TrendingUp } from 'lucide-react';
 import {
-  PieChart, Pie, Cell, Tooltip as ReTooltip, Legend as ReLegend,
-  LineChart, Line, XAxis, YAxis, CartesianGrid,
-  BarChart, Bar, ResponsiveContainer
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
 
-interface ChartData {
+type ChartKind = 'pie' | 'line' | 'bar';
+
+interface ProductionShareDatum {
   name: string;
   value: number;
   color: string;
 }
 
-const productionData: ChartData[] = [
-  { name: 'النفط الخام', value: 45, color: '#F39C12' },
-  { name: 'الغاز الطبيعي', value: 25, color: '#3498DB' },
-  { name: 'المعادن', value: 15, color: '#95A5A6' },
-  { name: 'المياه الجوفية', value: 10, color: '#16A085' },
-  { name: 'الموارد الزراعية', value: 5, color: '#27AE60' },
+interface SeriesDatum {
+  oil: number;
+  gas: number;
+  minerals: number;
+}
+
+const productionShare: ProductionShareDatum[] = [
+  { name: 'Crude Oil', value: 45, color: '#f59e0b' },
+  { name: 'Natural Gas', value: 25, color: '#3b82f6' },
+  { name: 'Minerals', value: 15, color: '#94a3b8' },
+  { name: 'Groundwater', value: 10, color: '#06b6d4' },
+  { name: 'Agriculture', value: 5, color: '#059669' },
 ];
 
-const yearlyProduction = [
-  { year: '2019', النفط: 1200, الغاز: 850, المعادن: 400 },
-  { year: '2020', النفط: 950, الغاز: 780, المعادن: 380 },
-  { year: '2021', النفط: 1100, الغاز: 820, المعادن: 420 },
-  { year: '2022', النفط: 1350, الغاز: 950, المعادن: 450 },
-  { year: '2023', النفط: 1400, الغاز: 980, المعادن: 480 },
+const yearlyProduction: Array<{ year: string } & SeriesDatum> = [
+  { year: '2019', oil: 1200, gas: 850, minerals: 400 },
+  { year: '2020', oil: 950, gas: 780, minerals: 380 },
+  { year: '2021', oil: 1100, gas: 820, minerals: 420 },
+  { year: '2022', oil: 1350, gas: 950, minerals: 450 },
+  { year: '2023', oil: 1400, gas: 980, minerals: 480 },
 ];
 
-const regions = [
-  { name: 'الشرق', النفط: 60, الغاز: 40, المعادن: 30 },
-  { name: 'الغرب', النفط: 35, الغاز: 55, المعادن: 45 },
-  { name: 'الجنوب', النفط: 20, الغاز: 25, المعادن: 60 },
-  { name: 'الوسط', النفط: 45, الغاز: 30, المعادن: 35 },
+const regionalProduction: Array<{ region: string } & SeriesDatum> = [
+  { region: 'East', oil: 60, gas: 40, minerals: 30 },
+  { region: 'West', oil: 35, gas: 55, minerals: 45 },
+  { region: 'South', oil: 20, gas: 25, minerals: 60 },
+  { region: 'Central', oil: 45, gas: 30, minerals: 35 },
 ];
 
-const COLORS = productionData.map(d => d.color);
+const SERIES_META: Array<{ key: keyof SeriesDatum; label: string; color: string }> = [
+  { key: 'oil', label: 'Oil', color: '#f59e0b' },
+  { key: 'gas', label: 'Gas', color: '#3b82f6' },
+  { key: 'minerals', label: 'Minerals', color: '#94a3b8' },
+];
 
-export const StatisticsCharts: React.FC = () => {
-  const [activeChart, setActiveChart] = useState<'pie' | 'line' | 'bar'>('pie');
+const CHART_TABS: Array<{ id: ChartKind; label: string; Icon: LucideIcon }> = [
+  { id: 'pie', label: 'Pie Chart', Icon: PieChartIcon },
+  { id: 'line', label: 'Line Chart', Icon: TrendingUp },
+  { id: 'bar', label: 'Bar Chart', Icon: BarChart3 },
+];
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white rounded-lg shadow-lg p-2 text-sm text-gray-800">
-          <span className="font-bold">{label}</span>
-          <ul className="mt-1">
-            {payload.map((entry: any, idx: number) => (
-              <li key={idx} className="flex items-center gap-2">
-                <span style={{ background: entry.color }} className="inline-block w-3 h-3 rounded-full"></span>
-                {entry.name}: <span className="font-semibold">{entry.value}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      );
-    }
-    return null;
-  };
+interface ChartTooltipEntry {
+  name?: number | string;
+  value?: number | string;
+  color?: string;
+  payload?: { color?: string; fill?: string };
+}
 
-  const PieChartComp: React.FC = () => (
-    <div className="flex flex-col items-center w-full">
-      <ResponsiveContainer width="100%" height={300}>
-        <PieChart>
-          <Pie
-            data={productionData}
-            dataKey="value"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            outerRadius={100}
-            innerRadius={60}
-            isAnimationActive
-            label={({ name, percent, x, y, index }) => (
-              <text
-                x={x}
-                y={y}
-                fill="#222"
-                fontSize={16}
-                fontWeight="bold"
-                textAnchor={x > 200 ? 'start' : 'end'}
-                alignmentBaseline="middle"
-                style={{ pointerEvents: 'none' }}
-              >
-                {name} ({(percent * 100).toFixed(0)}%)
-              </text>
-            )}
-            labelLine
-          >
-            {productionData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={entry.color} />
-            ))}
-          </Pie>
-          <ReTooltip content={<CustomTooltip />} />
-          <ReLegend verticalAlign="bottom" iconType="circle" />
-        </PieChart>
-      </ResponsiveContainer>
+interface ChartTooltipProps {
+  active?: boolean;
+  label?: number | string;
+  payload?: ReadonlyArray<ChartTooltipEntry>;
+}
+
+function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
+  if (!active || !payload || payload.length === 0) return null;
+  return (
+    <div className="rounded-xl bg-white/95 px-3.5 py-2.5 text-sm shadow-xl ring-1 ring-slate-200 backdrop-blur-sm">
+      {label !== undefined && label !== '' && (
+        <p className="mb-1.5 font-semibold text-slate-800">{label}</p>
+      )}
+      <ul className="space-y-1">
+        {payload.map((entry, index) => (
+          <li key={`${entry.name ?? 'series'}-${index}`} className="flex items-center gap-2 text-slate-600">
+            <span
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: entry.color ?? entry.payload?.fill ?? entry.payload?.color ?? '#94a3b8' }}
+            />
+            <span>{entry.name}</span>
+            <span className="ml-auto pl-3 font-semibold text-slate-800">{entry.value}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
+}
 
-  const LineChartComp: React.FC = () => (
-    <div className="w-full">
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={yearlyProduction} margin={{ top: 20, right: 30, left: 0, bottom: 10 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="year" />
-          <YAxis />
-          <ReTooltip content={<CustomTooltip />} />
-          <ReLegend verticalAlign="top" iconType="circle" />
-          <Line type="monotone" dataKey="النفط" stroke="#F39C12" strokeWidth={3} dot={{ r: 5 }} activeDot={{ r: 8 }} />
-          <Line type="monotone" dataKey="الغاز" stroke="#3498DB" strokeWidth={3} dot={{ r: 5 }} activeDot={{ r: 8 }} />
-          <Line type="monotone" dataKey="المعادن" stroke="#95A5A6" strokeWidth={3} dot={{ r: 5 }} activeDot={{ r: 8 }} />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  );
+interface PieLabelRenderProps {
+  cx?: number;
+  x?: number;
+  y?: number;
+  name?: string;
+  percent?: number;
+}
 
-  const BarChartComp: React.FC = () => (
-    <div className="w-full">
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={regions} margin={{ top: 20, right: 30, left: 0, bottom: 10 }}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" />
-          <YAxis />
-          <ReTooltip content={<CustomTooltip />} />
-          <ReLegend verticalAlign="top" iconType="circle" />
-          <Bar dataKey="النفط" fill="#F39C12" radius={[8, 8, 0, 0]} />
-          <Bar dataKey="الغاز" fill="#3498DB" radius={[8, 8, 0, 0]} />
-          <Bar dataKey="المعادن" fill="#95A5A6" radius={[8, 8, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+function renderPieLabel({ cx = 0, x = 0, y = 0, name = '', percent }: PieLabelRenderProps) {
+  return (
+    <text
+      x={x}
+      y={y}
+      fill="#334155"
+      fontSize={12}
+      fontWeight={600}
+      textAnchor={x >= cx ? 'start' : 'end'}
+      dominantBaseline="central"
+      style={{ pointerEvents: 'none' }}
+    >
+      {`${name} ${Math.round((percent ?? 0) * 100)}%`}
+    </text>
   );
+}
+
+function ProductionPieChart() {
+  return (
+    <ResponsiveContainer width="100%" height={320}>
+      <PieChart>
+        <Pie
+          data={productionShare}
+          dataKey="value"
+          nameKey="name"
+          cx="50%"
+          cy="50%"
+          innerRadius={70}
+          outerRadius={110}
+          paddingAngle={2}
+          stroke="#ffffff"
+          strokeWidth={2}
+          isAnimationActive
+          label={renderPieLabel}
+          labelLine
+        >
+          {productionShare.map((entry) => (
+            <Cell key={entry.name} fill={entry.color} />
+          ))}
+        </Pie>
+        <Tooltip content={<ChartTooltip />} />
+        <Legend verticalAlign="bottom" iconType="circle" iconSize={10} />
+      </PieChart>
+    </ResponsiveContainer>
+  );
+}
+
+function ProductionLineChart() {
+  return (
+    <ResponsiveContainer width="100%" height={320}>
+      <LineChart data={yearlyProduction} margin={{ top: 16, right: 24, left: 0, bottom: 8 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+        <XAxis dataKey="year" tickLine={false} axisLine={{ stroke: '#cbd5e1' }} tick={{ fill: '#64748b', fontSize: 12 }} />
+        <YAxis tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+        <Tooltip content={<ChartTooltip />} />
+        <Legend verticalAlign="top" iconType="circle" iconSize={10} />
+        {SERIES_META.map((series) => (
+          <Line
+            key={series.key}
+            type="monotone"
+            dataKey={series.key}
+            name={series.label}
+            stroke={series.color}
+            strokeWidth={3}
+            dot={{ r: 4, fill: series.color, stroke: '#ffffff', strokeWidth: 2 }}
+            activeDot={{ r: 6 }}
+          />
+        ))}
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
+function RegionalBarChart() {
+  return (
+    <ResponsiveContainer width="100%" height={320}>
+      <BarChart data={regionalProduction} margin={{ top: 16, right: 24, left: 0, bottom: 8 }} barCategoryGap="28%">
+        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+        <XAxis dataKey="region" tickLine={false} axisLine={{ stroke: '#cbd5e1' }} tick={{ fill: '#64748b', fontSize: 12 }} />
+        <YAxis tickLine={false} axisLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+        <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(148, 163, 184, 0.12)' }} />
+        <Legend verticalAlign="top" iconType="circle" iconSize={10} />
+        {SERIES_META.map((series) => (
+          <Bar
+            key={series.key}
+            dataKey={series.key}
+            name={series.label}
+            fill={series.color}
+            radius={[6, 6, 0, 0]}
+            maxBarSize={36}
+          />
+        ))}
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+const SUMMARY_CARDS = [
+  { value: '1.4M', label: 'bbl oil/day', gradient: 'from-amber-50 to-orange-100', ring: 'ring-orange-200/60', valueColor: 'text-orange-800', labelColor: 'text-orange-600' },
+  { value: '980M', label: 'ft³ gas/day', gradient: 'from-sky-50 to-blue-100', ring: 'ring-blue-200/60', valueColor: 'text-blue-800', labelColor: 'text-blue-600' },
+  { value: '480K', label: 'tons minerals/year', gradient: 'from-slate-50 to-slate-200', ring: 'ring-slate-300/60', valueColor: 'text-slate-800', labelColor: 'text-slate-600' },
+  { value: '2.5M', label: 'm³ water/day', gradient: 'from-cyan-50 to-cyan-100', ring: 'ring-cyan-200/60', valueColor: 'text-cyan-800', labelColor: 'text-cyan-600' },
+] as const;
+
+export function StatisticsCharts() {
+  const [activeChart, setActiveChart] = useState<ChartKind>('pie');
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6">
+    <div className="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-slate-200/70 sm:p-8">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">الإحصائيات والمخططات البيانية</h2>
-        <div className="flex space-x-2 rtl:space-x-reverse mb-6">
-          <button
-            onClick={() => setActiveChart('pie')}
-            className={`flex items-center space-x-2 rtl:space-x-reverse px-4 py-2 rounded-lg transition-all duration-200 ${
-              activeChart === 'pie'
-                ? 'bg-green-100 text-green-800 ring-2 ring-green-400'
-                : 'bg-gray-100 text-gray-600 hover:bg-green-50'
-            }`}
-          >
-            <PieIcon className="w-4 h-4" />
-            <span>مخطط دائري</span>
-          </button>
-          <button
-            onClick={() => setActiveChart('line')}
-            className={`flex items-center space-x-2 rtl:space-x-reverse px-4 py-2 rounded-lg transition-all duration-200 ${
-              activeChart === 'line'
-                ? 'bg-green-100 text-green-800 ring-2 ring-green-400'
-                : 'bg-gray-100 text-gray-600 hover:bg-green-50'
-            }`}
-          >
-            <TrendingUp className="w-4 h-4" />
-            <span>مخطط خطي</span>
-          </button>
-          <button
-            onClick={() => setActiveChart('bar')}
-            className={`flex items-center space-x-2 rtl:space-x-reverse px-4 py-2 rounded-lg transition-all duration-200 ${
-              activeChart === 'bar'
-                ? 'bg-green-100 text-green-800 ring-2 ring-green-400'
-                : 'bg-gray-100 text-gray-600 hover:bg-green-50'
-            }`}
-          >
-            <BarChart3 className="w-4 h-4" />
-            <span>مخطط عمودي</span>
-          </button>
+        <h2 className="text-2xl font-bold text-slate-800">Statistics &amp; Charts</h2>
+        <p className="mt-1 text-sm text-slate-500">National production breakdown and regional output.</p>
+
+        {/* Chart switcher */}
+        <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Chart type">
+          {CHART_TABS.map((tab) => {
+            const isActive = activeChart === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveChart(tab.id)}
+                aria-pressed={isActive}
+                className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-medium transition-all duration-200 ${
+                  isActive
+                    ? 'bg-emerald-600 text-white shadow-md'
+                    : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 hover:text-slate-800'
+                }`}
+              >
+                <tab.Icon className="h-4 w-4" aria-hidden="true" />
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
       </div>
-      <div className="bg-gradient-to-br from-gray-50 to-green-50 rounded-xl p-6 min-h-96 flex items-center justify-center">
-        {activeChart === 'pie' && <PieChartComp />}
-        {activeChart === 'line' && <LineChartComp />}
-        {activeChart === 'bar' && <BarChartComp />}
+
+      {/* Chart container */}
+      <div className="rounded-xl bg-slate-50/80 p-4 ring-1 ring-slate-200/70 sm:p-6">
+        {activeChart === 'pie' && <ProductionPieChart />}
+        {activeChart === 'line' && <ProductionLineChart />}
+        {activeChart === 'bar' && <RegionalBarChart />}
       </div>
-      <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-orange-100 to-orange-200 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-orange-800">1.4M</div>
-          <div className="text-sm text-orange-700">برميل نفط/يوم</div>
-        </div>
-        <div className="bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-blue-800">980M</div>
-          <div className="text-sm text-blue-700">قدم³ غاز/يوم</div>
-        </div>
-        <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-gray-800">480K</div>
-          <div className="text-sm text-gray-700">طن معادن/سنة</div>
-        </div>
-        <div className="bg-gradient-to-br from-green-100 to-green-200 rounded-lg p-4 text-center">
-          <div className="text-2xl font-bold text-green-800">2.5M</div>
-          <div className="text-sm text-green-700">م³ مياه/يوم</div>
-        </div>
+
+      {/* Summary cards */}
+      <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+        {SUMMARY_CARDS.map((stat) => (
+          <div
+            key={stat.label}
+            className={`rounded-xl bg-gradient-to-br ${stat.gradient} p-4 text-center shadow-sm ring-1 ${stat.ring} transition-shadow hover:shadow-md`}
+          >
+            <div className={`text-2xl font-bold ${stat.valueColor}`}>{stat.value}</div>
+            <div className={`mt-0.5 text-sm ${stat.labelColor}`}>{stat.label}</div>
+          </div>
+        ))}
       </div>
     </div>
   );
-};
+}
