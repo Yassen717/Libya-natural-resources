@@ -1,54 +1,71 @@
-import React, { useState } from 'react';
-import { Menu, X, MapPin, BarChart3, Database, Leaf } from 'lucide-react';
+import { useState } from 'react';
+import {
+  Menu,
+  X,
+  LayoutDashboard,
+  Map,
+  BarChart3,
+  Database,
+  Sprout,
+  Mountain,
+} from 'lucide-react';
 
 interface HeaderProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ activeSection, onSectionChange }) => {
+const navigationItems = [
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'map', label: 'Interactive Map', icon: Map },
+  { id: 'statistics', label: 'Statistics', icon: BarChart3 },
+  { id: 'resources', label: 'Database', icon: Database },
+  { id: 'agriculture', label: 'Agriculture', icon: Sprout },
+];
+
+export function Header({ activeSection, onSectionChange }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const navigationItems = [
-    { id: 'overview', label: 'نظرة عامة', icon: BarChart3 },
-    { id: 'map', label: 'الخريطة التفاعلية', icon: MapPin },
-    { id: 'statistics', label: 'الإحصائيات', icon: BarChart3 },
-    { id: 'resources', label: 'قاعدة البيانات', icon: Database },
-    { id: 'agriculture', label: 'الموارد الزراعية', icon: Leaf },
-  ];
-
   return (
-    <header className="bg-white/95 backdrop-blur-sm border-b border-green-100 sticky top-0 z-50 shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-4 rtl:space-x-reverse">
-            <div className="flex items-center space-x-2 rtl:space-x-reverse">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-green-800 rounded-lg flex items-center justify-center">
-                <MapPin className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-800">الموارد الطبيعية</h1>
-                <p className="text-xs text-gray-600">دولة ليبيا</p>
-              </div>
+    <header className="sticky top-0 z-50 bg-white/80 ring-1 ring-slate-900/5 backdrop-blur-md">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          {/* Brand */}
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-800 shadow-md shadow-emerald-900/20">
+              <Mountain className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-lg font-bold leading-tight text-slate-900">
+                Libya Natural Resources
+              </h1>
+              <p className="text-xs font-medium text-emerald-700">
+                Resource Atlas
+              </p>
             </div>
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8 rtl:space-x-reverse">
+          <nav
+            className="hidden items-center gap-1 md:flex"
+            aria-label="Main navigation"
+          >
             {navigationItems.map((item) => {
               const Icon = item.icon;
+              const isActive = activeSection === item.id;
               return (
                 <button
                   key={item.id}
                   onClick={() => onSectionChange(item.id)}
-                  className={`flex items-center space-x-2 rtl:space-x-reverse px-3 py-2 rounded-lg transition-all duration-200 ${
-                    activeSection === item.id
-                      ? 'bg-green-100 text-green-800 shadow-sm'
-                      : 'text-gray-600 hover:text-green-700 hover:bg-green-50'
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? 'bg-emerald-100 text-emerald-800 shadow-sm ring-1 ring-emerald-200/70'
+                      : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
-                  <span className="font-medium">{item.label}</span>
+                  <Icon className="h-4 w-4" />
+                  <span>{item.label}</span>
                 </button>
               );
             })}
@@ -57,18 +74,25 @@ export const Header: React.FC<HeaderProps> = ({ activeSection, onSectionChange }
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 rounded-lg text-gray-600 hover:text-green-700 hover:bg-green-50"
+            aria-label="Toggle navigation"
+            aria-expanded={isMenuOpen}
+            className="rounded-lg p-2 text-slate-600 transition-colors duration-200 hover:bg-emerald-50 hover:text-emerald-700 md:hidden"
           >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {isMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
           </button>
         </div>
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-green-100">
-            <nav className="flex flex-col space-y-2">
+          <div className="animate-fade-in border-t border-slate-200/70 py-4 md:hidden">
+            <nav className="flex flex-col gap-1" aria-label="Mobile navigation">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
+                const isActive = activeSection === item.id;
                 return (
                   <button
                     key={item.id}
@@ -76,14 +100,15 @@ export const Header: React.FC<HeaderProps> = ({ activeSection, onSectionChange }
                       onSectionChange(item.id);
                       setIsMenuOpen(false);
                     }}
-                    className={`flex items-center space-x-3 rtl:space-x-reverse px-3 py-3 rounded-lg transition-all duration-200 ${
-                      activeSection === item.id
-                        ? 'bg-green-100 text-green-800'
-                        : 'text-gray-600 hover:text-green-700 hover:bg-green-50'
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-3 font-medium transition-all duration-200 ${
+                      isActive
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : 'text-slate-600 hover:bg-emerald-50 hover:text-emerald-700'
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
+                    <Icon className="h-5 w-5" />
+                    <span>{item.label}</span>
                   </button>
                 );
               })}
@@ -93,4 +118,4 @@ export const Header: React.FC<HeaderProps> = ({ activeSection, onSectionChange }
       </div>
     </header>
   );
-};
+}

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Search, Filter, ChevronDown, Calendar, MapPin, TrendingUp, Database } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Calendar, MapPin, Search, SearchX, X } from 'lucide-react';
 
 interface Resource {
   id: string;
@@ -21,113 +21,124 @@ interface Resource {
 const mockResources: Resource[] = [
   {
     id: '1',
-    name: 'حقل السرير',
+    name: 'Sarir Field',
     type: 'oil',
-    location: 'حوض سرت',
+    location: 'Sirte Basin',
     discoveryYear: 1961,
-    currentProduction: '400,000 برميل/يوم',
-    reserves: '2.8 مليار برميل',
+    currentProduction: '400,000 bbl/day',
+    reserves: '2.8 billion barrels',
     status: 'active',
     technicalData: {
-      depth: '2,800 متر',
-      quality: 'خفيف حلو (42° API)',
-      extractionMethod: 'ضخ طبيعي',
+      depth: '2,800 meters',
+      quality: 'Light sweet (42° API)',
+      extractionMethod: 'Natural flow',
       lastUpdate: '2024-01-15'
     }
   },
   {
     id: '2',
-    name: 'حقل الواحة',
+    name: 'Waha Field',
     type: 'oil',
-    location: 'حوض سرت',
+    location: 'Sirte Basin',
     discoveryYear: 1958,
-    currentProduction: '300,000 برميل/يوم',
-    reserves: '1.5 مليار برميل',
+    currentProduction: '300,000 bbl/day',
+    reserves: '1.5 billion barrels',
     status: 'active',
     technicalData: {
-      depth: '3,200 متر',
-      quality: 'متوسط (35° API)',
-      extractionMethod: 'ضخ صناعي',
+      depth: '3,200 meters',
+      quality: 'Medium (35° API)',
+      extractionMethod: 'Artificial lift',
       lastUpdate: '2024-01-12'
     }
   },
   {
     id: '3',
-    name: 'حقل البريقة',
+    name: 'Brega Field',
     type: 'gas',
-    location: 'خليج سرت',
+    location: 'Gulf of Sirte',
     discoveryYear: 1969,
-    currentProduction: '15 مليار قدم³/سنة',
-    reserves: '500 مليار قدم³',
+    currentProduction: '15 billion ft³/year',
+    reserves: '500 billion ft³',
     status: 'active',
     technicalData: {
-      depth: '1,800 متر',
-      quality: 'غاز طبيعي جاف',
-      extractionMethod: 'إنتاج طبيعي',
+      depth: '1,800 meters',
+      quality: 'Dry natural gas',
+      extractionMethod: 'Natural production',
       lastUpdate: '2024-01-10'
     }
   },
   {
     id: '4',
-    name: 'خزان الحجر الرملي النوبي',
+    name: 'Nubian Sandstone Aquifer',
     type: 'water',
-    location: 'الصحراء الليبية',
+    location: 'Libyan Desert',
     discoveryYear: 1953,
-    currentProduction: '2.5 مليون م³/يوم',
-    reserves: '35,000 مليار م³',
+    currentProduction: '2.5 million m³/day',
+    reserves: '35,000 billion m³',
     status: 'active',
     technicalData: {
-      depth: '500-2,000 متر',
-      quality: 'مياه عذبة (TDS < 1000 ppm)',
-      extractionMethod: 'آبار ارتوازية',
+      depth: '500-2,000 meters',
+      quality: 'Fresh water (TDS < 1000 ppm)',
+      extractionMethod: 'Artesian wells',
       lastUpdate: '2024-01-08'
     }
   }
 ];
 
-export const ResourceDatabase: React.FC = () => {
+const resourceTypes = [
+  { id: 'all', label: 'All resources' },
+  { id: 'oil', label: 'Oil' },
+  { id: 'gas', label: 'Natural gas' },
+  { id: 'water', label: 'Groundwater' },
+  { id: 'mining', label: 'Mining' },
+  { id: 'agriculture', label: 'Agriculture' },
+];
+
+function getTypeColor(type: string) {
+  switch (type) {
+    case 'oil': return 'bg-amber-100 text-amber-800';
+    case 'gas': return 'bg-blue-100 text-blue-800';
+    case 'water': return 'bg-cyan-100 text-cyan-800';
+    case 'mining': return 'bg-slate-200 text-slate-800';
+    case 'agriculture': return 'bg-emerald-100 text-emerald-800';
+    default: return 'bg-slate-100 text-slate-800';
+  }
+}
+
+function getStatusColor(status: string) {
+  switch (status) {
+    case 'active': return 'bg-emerald-100 text-emerald-800';
+    case 'inactive': return 'bg-red-100 text-red-800';
+    case 'planned': return 'bg-amber-100 text-amber-800';
+    default: return 'bg-slate-100 text-slate-800';
+  }
+}
+
+function getStatusText(status: string) {
+  switch (status) {
+    case 'active': return 'Active';
+    case 'inactive': return 'Inactive';
+    case 'planned': return 'Planned';
+    default: return 'Unknown';
+  }
+}
+
+export function ResourceDatabase() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
-  const [sortBy, setSortBy] = useState<'name' | 'year' | 'production'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'year'>('name');
 
-  const resourceTypes = [
-    { id: 'all', label: 'جميع الموارد' },
-    { id: 'oil', label: 'النفط' },
-    { id: 'gas', label: 'الغاز الطبيعي' },
-    { id: 'water', label: 'المياه الجوفية' },
-    { id: 'mining', label: 'التعدين' },
-    { id: 'agriculture', label: 'الزراعة' },
-  ];
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'oil': return 'bg-orange-100 text-orange-800';
-      case 'gas': return 'bg-blue-100 text-blue-800';
-      case 'water': return 'bg-cyan-100 text-cyan-800';
-      case 'mining': return 'bg-gray-100 text-gray-800';
-      case 'agriculture': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-red-100 text-red-800';
-      case 'planned': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'active': return 'نشط';
-      case 'inactive': return 'غير نشط';
-      case 'planned': return 'مخطط';
-      default: return 'غير محدد';
-    }
-  };
+  useEffect(() => {
+    if (!selectedResource) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setSelectedResource(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedResource]);
 
   const filteredResources = mockResources
     .filter(resource => {
@@ -139,147 +150,169 @@ export const ResourceDatabase: React.FC = () => {
     .sort((a, b) => {
       switch (sortBy) {
         case 'year': return b.discoveryYear - a.discoveryYear;
-        case 'name': return a.name.localeCompare(b.name);
+        case 'name':
         default: return a.name.localeCompare(b.name);
       }
     });
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6">
+    <div className="rounded-2xl bg-white p-6 shadow-xl ring-1 ring-slate-200/70">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">قاعدة بيانات الموارد الطبيعية</h2>
-        
-        {/* Search and Filter Controls */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <h2 className="mb-4 text-2xl font-bold text-slate-800">Natural Resource Database</h2>
+
+        {/* Search and filter controls */}
+        <div className="mb-6 flex flex-col gap-4 md:flex-row">
           <div className="relative flex-1">
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
             <input
               type="text"
-              placeholder="البحث في الموارد..."
+              placeholder="Search resources..."
+              aria-label="Search resources"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-4 pr-12 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent"
+              className="w-full rounded-lg border border-slate-200 py-3 pl-10 pr-4 focus:border-transparent focus:ring-2 focus:ring-emerald-400"
             />
           </div>
-          
+
           <div className="flex gap-2">
             <select
               value={selectedType}
               onChange={(e) => setSelectedType(e.target.value)}
-              className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent"
+              aria-label="Filter by resource type"
+              className="rounded-lg border border-slate-200 px-4 py-3 focus:border-transparent focus:ring-2 focus:ring-emerald-400"
             >
               {resourceTypes.map(type => (
                 <option key={type.id} value={type.id}>{type.label}</option>
               ))}
             </select>
-            
+
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'name' | 'year' | 'production')}
-              className="px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent"
+              onChange={(e) => setSortBy(e.target.value as 'name' | 'year')}
+              aria-label="Sort resources"
+              className="rounded-lg border border-slate-200 px-4 py-3 focus:border-transparent focus:ring-2 focus:ring-emerald-400"
             >
-              <option value="name">الترتيب حسب الاسم</option>
-              <option value="year">الترتيب حسب سنة الاكتشاف</option>
+              <option value="name">Sort by name</option>
+              <option value="year">Sort by discovery year</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* Resources Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-        {filteredResources.map((resource) => (
-          <div
-            key={resource.id}
-            onClick={() => setSelectedResource(resource)}
-            className="bg-gradient-to-br from-gray-50 to-green-50 rounded-xl p-6 border border-gray-200 hover:border-green-300 cursor-pointer transition-all duration-200 hover:shadow-lg"
-          >
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-bold text-gray-800">{resource.name}</h3>
-              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(resource.status)}`}>
-                {getStatusText(resource.status)}
-              </span>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                <span className={`px-2 py-1 rounded-md text-xs font-medium ${getTypeColor(resource.type)}`}>
-                  {resourceTypes.find(t => t.id === resource.type)?.label}
+      {/* Resources grid */}
+      {filteredResources.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <SearchX className="mb-4 h-12 w-12 text-slate-300" aria-hidden="true" />
+          <p className="font-medium text-slate-500">No resources match your search.</p>
+        </div>
+      ) : (
+        <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {filteredResources.map((resource) => (
+            <button
+              key={resource.id}
+              type="button"
+              onClick={() => setSelectedResource(resource)}
+              className="w-full rounded-2xl bg-white p-6 text-left shadow-lg ring-1 ring-slate-200/70 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:ring-emerald-300 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+            >
+              <div className="mb-4 flex items-start justify-between">
+                <h3 className="text-lg font-bold text-slate-800">{resource.name}</h3>
+                <span className={`rounded-full px-2 py-1 text-xs font-medium ${getStatusColor(resource.status)}`}>
+                  {getStatusText(resource.status)}
                 </span>
               </div>
-              
-              <div className="flex items-center space-x-2 rtl:space-x-reverse text-sm text-gray-600">
-                <MapPin className="w-4 h-4" />
-                <span>{resource.location}</span>
-              </div>
-              
-              <div className="flex items-center space-x-2 rtl:space-x-reverse text-sm text-gray-600">
-                <Calendar className="w-4 h-4" />
-                <span>اكتشف عام {resource.discoveryYear}</span>
-              </div>
-              
-              <div className="pt-3 border-t border-gray-200">
-                <div className="text-sm text-gray-600 mb-1">الإنتاج الحالي</div>
-                <div className="font-semibold text-green-700">{resource.currentProduction}</div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
 
-      {/* Detailed View Modal */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <span className={`rounded-md px-2 py-1 text-xs font-medium ${getTypeColor(resource.type)}`}>
+                    {resourceTypes.find(t => t.id === resource.type)?.label}
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-2 text-sm text-slate-600">
+                  <MapPin className="h-4 w-4" aria-hidden="true" />
+                  <span>{resource.location}</span>
+                </div>
+
+                <div className="flex items-center space-x-2 text-sm text-slate-600">
+                  <Calendar className="h-4 w-4" aria-hidden="true" />
+                  <span>Discovered {resource.discoveryYear}</span>
+                </div>
+
+                <div className="border-t border-slate-200 pt-3">
+                  <div className="mb-1 text-sm text-slate-600">Current production</div>
+                  <div className="font-semibold text-emerald-700">{resource.currentProduction}</div>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Detail modal */}
       {selectedResource && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 z-50 flex animate-fade-in items-center justify-center bg-black/50 p-4"
+          onClick={() => setSelectedResource(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${selectedResource.name} details`}
+            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-6">
-              <div className="flex justify-between items-start mb-6">
+              <div className="mb-6 flex items-start justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">{selectedResource.name}</h2>
-                  <div className="flex space-x-2 rtl:space-x-reverse">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getTypeColor(selectedResource.type)}`}>
+                  <h2 className="mb-2 text-2xl font-bold text-slate-800">{selectedResource.name}</h2>
+                  <div className="flex space-x-2">
+                    <span className={`rounded-full px-3 py-1 text-sm font-medium ${getTypeColor(selectedResource.type)}`}>
                       {resourceTypes.find(t => t.id === selectedResource.type)?.label}
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedResource.status)}`}>
+                    <span className={`rounded-full px-3 py-1 text-sm font-medium ${getStatusColor(selectedResource.status)}`}>
                       {getStatusText(selectedResource.status)}
                     </span>
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setSelectedResource(null)}
-                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                  aria-label="Close"
+                  className="rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
                 >
-                  ×
+                  <X className="h-6 w-6" aria-hidden="true" />
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-4">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h4 className="font-semibold text-gray-700 mb-2">معلومات أساسية</h4>
+                  <div className="rounded-lg bg-slate-50 p-4">
+                    <h4 className="mb-2 font-semibold text-slate-700">Basic information</h4>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">الموقع:</span>
+                        <span className="text-slate-600">Location:</span>
                         <span className="font-medium">{selectedResource.location}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">سنة الاكتشاف:</span>
+                        <span className="text-slate-600">Discovery year:</span>
                         <span className="font-medium">{selectedResource.discoveryYear}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">آخر تحديث:</span>
+                        <span className="text-slate-600">Last update:</span>
                         <span className="font-medium">{selectedResource.technicalData.lastUpdate}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-green-50 rounded-lg p-4">
-                    <h4 className="font-semibold text-gray-700 mb-2">الإنتاج والاحتياطي</h4>
+                  <div className="rounded-lg bg-emerald-50 p-4">
+                    <h4 className="mb-2 font-semibold text-slate-700">Production &amp; reserves</h4>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">الإنتاج الحالي:</span>
-                        <span className="font-medium text-green-700">{selectedResource.currentProduction}</span>
+                        <span className="text-slate-600">Current production:</span>
+                        <span className="font-medium text-emerald-700">{selectedResource.currentProduction}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-gray-600">الاحتياطي المؤكد:</span>
+                        <span className="text-slate-600">Proven reserves:</span>
                         <span className="font-medium text-blue-700">{selectedResource.reserves}</span>
                       </div>
                     </div>
@@ -287,35 +320,36 @@ export const ResourceDatabase: React.FC = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <div className="bg-blue-50 rounded-lg p-4">
-                    <h4 className="font-semibold text-gray-700 mb-2">البيانات التقنية</h4>
+                  <div className="rounded-lg bg-blue-50 p-4">
+                    <h4 className="mb-2 font-semibold text-slate-700">Technical data</h4>
                     <div className="space-y-2 text-sm">
                       {selectedResource.technicalData.depth && (
                         <div className="flex justify-between">
-                          <span className="text-gray-600">العمق:</span>
+                          <span className="text-slate-600">Depth:</span>
                           <span className="font-medium">{selectedResource.technicalData.depth}</span>
                         </div>
                       )}
                       {selectedResource.technicalData.quality && (
                         <div className="flex justify-between">
-                          <span className="text-gray-600">الجودة:</span>
+                          <span className="text-slate-600">Quality:</span>
                           <span className="font-medium">{selectedResource.technicalData.quality}</span>
                         </div>
                       )}
                       {selectedResource.technicalData.extractionMethod && (
                         <div className="flex justify-between">
-                          <span className="text-gray-600">طريقة الاستخراج:</span>
+                          <span className="text-slate-600">Extraction method:</span>
                           <span className="font-medium">{selectedResource.technicalData.extractionMethod}</span>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="bg-yellow-50 rounded-lg p-4">
-                    <h4 className="font-semibold text-gray-700 mb-2">معلومات إضافية</h4>
-                    <p className="text-sm text-gray-600">
-                      يعتبر {selectedResource.name} من أهم الموارد الطبيعية في ليبيا، ويساهم بشكل كبير في الاقتصاد الوطني.
-                      تم اكتشافه عام {selectedResource.discoveryYear} وما زال يحافظ على معدلات إنتاج عالية.
+                  <div className="rounded-lg bg-amber-50 p-4">
+                    <h4 className="mb-2 font-semibold text-slate-700">Additional information</h4>
+                    <p className="text-sm text-slate-600">
+                      {selectedResource.name} is one of Libya&apos;s most important natural resources and a
+                      major contributor to the national economy. Discovered in {selectedResource.discoveryYear},
+                      it continues to maintain strong production rates.
                     </p>
                   </div>
                 </div>
@@ -325,10 +359,10 @@ export const ResourceDatabase: React.FC = () => {
         </div>
       )}
 
-      {/* Results Summary */}
-      <div className="text-center text-gray-600">
-        عرض {filteredResources.length} من أصل {mockResources.length} مورد طبيعي
+      {/* Results summary */}
+      <div className="text-center text-slate-600">
+        Showing {filteredResources.length} of {mockResources.length} natural resources
       </div>
     </div>
   );
-};
+}
